@@ -77,7 +77,7 @@ td:nth-child(5), th:nth-child(5) { width: 70px }
       <tr ng-if="logs.length > 0" ng-repeat="x in logs">
         <!--<td>{{ x.requestId }}</td> -->
         <td>{{ x.method }}</td>
-        <td> <span style="display: block;max-width:420px;">{{ x.url }} </span></td>
+        <td> <span style="display: block;max-width:420px;word-break: break-word;">{{ x.url }} </span></td>
         <td>{{ x.type }}</td>
         <td>{{ x.statusCode }}</td>
         <td>{{ x.fromCache }}</td>
