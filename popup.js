@@ -1,4 +1,12 @@
-var app = angular.module('loggerApp', []);
+var app = angular.module('loggerApp', [])
+.config( [
+    '$compileProvider',
+    function( $compileProvider )
+    {   
+        $compileProvider.aHrefSanitizationWhitelist(/^\s*(https?|ftp|mailto|chrome-extension|data):/);
+        // Angular before v1.2 uses $compileProvider.urlSanitizationWhitelist(...)
+    }
+]);
 app.controller('appCtrl', function($scope, $http) {
   $scope.logs = [];
   $scope.isRecording = false;
@@ -6,6 +14,7 @@ app.controller('appCtrl', function($scope, $http) {
 
   $scope.recordActionStatus = false;
   $scope.stopRecordActionStatus = false;
+  $scope.csvContent = "data:text/csv;charset=utf-8,Method,URL,Type,Status,FromCache?" + encodeURIComponent("\n");
 
   $scope.record = function() {
     if($scope.isRecording) {
@@ -17,7 +26,6 @@ app.controller('appCtrl', function($scope, $http) {
       return;
     }
     $scope.recordActionStatus = true;
-    console.error('sending command' + $scope.tabId);
     chrome.runtime.sendMessage({tabId: $scope.tabId, message: "register"}, function(response) {
       $scope.$apply(function(){
         $scope.isRecording = true;
@@ -69,6 +77,11 @@ app.controller('appCtrl', function($scope, $http) {
     chrome.runtime.sendMessage({tabId: $scope.tabId, message: "fetchLogs"}, function(response) {
       $scope.$apply(function(){
           $scope.logs = response.data;
+
+          $scope.logs.forEach(function(dataItem, index){
+            dataString = [dataItem.method,dataItem.url,dataItem.type,dataItem.statusCode,dataItem.fromCache].join(",");
+            $scope.csvContent += index <  $scope.logs.length ? dataString + encodeURIComponent("\n") : dataString;
+          });
       });
     });
   };
@@ -77,9 +90,15 @@ app.controller('appCtrl', function($scope, $http) {
   port.onMessage.addListener(function(msg) {
         $scope.$apply(function(){
             $scope.logs.push(msg);
+
+            $scope.logs.forEach(function(dataItem, index){
+              dataString = [dataItem.method,"\"" + dataItem.url+ "\"",dataItem.type,dataItem.statusCode,dataItem.fromCache].join(",");
+              $scope.csvContent += index <  $scope.logs.length ? dataString + encodeURIComponent("\n") : dataString;
+            });
         });
   });
 });
+ 
 
   //TODO this won't work, cause race condition need promise
   $scope.fetchRecordingStatus();

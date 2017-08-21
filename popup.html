@@ -15,6 +15,10 @@ body {
     padding: .25rem;
 }
 
+#download {
+    float: right;
+}
+
 .container {
   max-width: 700px;
   padding: 0px;
@@ -59,6 +63,11 @@ td:nth-child(5), th:nth-child(5) { width: 70px }
 
 <span ng-if="isRecording">Status: Recording...</span>
 <span ng-if="!isRecording">Status: Not Recording...</span>
+
+<a id="download" href="{{csvContent}}" download="my_data.csv" >
+  <button type="button" class="btn btn-outline-secondary">Download as CSV</button>
+</a>
+
 
 
   <div class="container">

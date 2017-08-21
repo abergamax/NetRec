@@ -6,6 +6,13 @@ chrome.webRequest.onCompleted.addListener(function(request){
     recordLog(request);
 },{
     urls: ["https://*/*"]
+}, ["responseHeaders"]);
+
+
+chrome.webRequest.onErrorOccurred.addListener(function(request){
+    recordLog(request);
+},{
+    urls: ["https://*/*"]
 });
 
 chrome.runtime.onMessage.addListener(
@@ -16,11 +23,15 @@ chrome.runtime.onMessage.addListener(
     if (request.message == "fetchLogs")
       sendResponse({data: requestMap.get(request.tabId)});
 
-    if (request.message == "register")
+    if (request.message == "register") {
       registerTab(request.tabId);
+      sendResponse({ack: 'Done!'});   
+    }
 
-    if (request.message == "unregister")
+    if (request.message == "unregister") {
       unRegisterTab(request.tabId);
+      sendResponse({ack: 'Done!'});  
+    }
 
     if (request.message == "fetchRecordingStatus")
       sendResponse({isRecording: isRegistered(request.tabId)});
@@ -32,7 +43,6 @@ function registerTab(tabId){
         return;
     } 
     registerMap.set(tabId, {});
-    sendResponse({ack: 'Done!'});
 }
 
 function unRegisterTab(tabId){
@@ -40,7 +50,6 @@ function unRegisterTab(tabId){
         return;
     } 
     registerMap.delete(tabId);
-    sendResponse({ack: 'Done!'});
 }
 
 function isRegistered(tabId) {
