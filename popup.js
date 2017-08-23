@@ -14,7 +14,7 @@ app.controller('appCtrl', function($scope, $http) {
 
   $scope.recordActionStatus = false;
   $scope.stopRecordActionStatus = false;
-  $scope.csvContent = "data:text/csv;charset=utf-8,Method,URL,Type,Status,FromCache?" + encodeURIComponent("\n");
+  $scope.csvContent = "data:text/csv;charset=utf-8,Method,URL,Type,RequestHeaders,Status,ResponseHeaders,FromCache?" + encodeURIComponent("\n");
 
   $scope.record = function() {
     if($scope.isRecording) {
@@ -78,10 +78,7 @@ app.controller('appCtrl', function($scope, $http) {
       $scope.$apply(function(){
           $scope.logs = response.data;
 
-          $scope.logs.forEach(function(dataItem, index){
-            dataString = [dataItem.method,dataItem.url,dataItem.type,dataItem.statusCode,dataItem.fromCache].join(",");
-            $scope.csvContent += index <  $scope.logs.length ? dataString + encodeURIComponent("\n") : dataString;
-          });
+          generateDataRecord();
       });
     });
   };
@@ -91,13 +88,43 @@ app.controller('appCtrl', function($scope, $http) {
         $scope.$apply(function(){
             $scope.logs.push(msg);
 
-            $scope.logs.forEach(function(dataItem, index){
-              dataString = [dataItem.method,"\"" + dataItem.url+ "\"",dataItem.type,dataItem.statusCode,dataItem.fromCache].join(",");
-              $scope.csvContent += index <  $scope.logs.length ? dataString + encodeURIComponent("\n") : dataString;
-            });
+            generateDataRecord();
         });
   });
 });
+
+function generateDataRecord(){
+  $scope.logs.forEach(function(dataItem, index){
+    dataString = [dataItem.method,"\"" + dataItem.url+ "\"",dataItem.type,convertHeadersToString(dataItem.requestHeaders),dataItem.statusCode,convertHeadersToString(dataItem.responseHeaders),dataItem.fromCache].join(",");
+    $scope.csvContent += index <  $scope.logs.length ? dataString + encodeURIComponent("\n") : dataString;
+  });
+}
+
+function convertHeadersToString(headers) {
+  if(headers === undefined || headers === null) {
+    return '';
+  }
+
+  var headerString = '';
+  headers.forEach(function(header, index) {
+    headerString += index <  headers.length - 1 ? (header.name + ':' +escapeCSV(header.value))  + encodeURIComponent("\n") : (header.name + ':' +escapeCSV(header.value));
+  });
+  return "\"" + headerString + "\"";
+}
+
+function escapeCSV(str){
+  if(str === null ) return str;
+  var result = "";
+  var i = 0;
+  for(i = 0; i < str.length ; i++) {
+    if (str.charAt(i) === "\"") {
+      result += "\"\"";
+    } else {
+      result += str.charAt(i);
+    }
+  }
+  return result;
+}
  
 
   //TODO this won't work, cause race condition need promise
