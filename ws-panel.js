@@ -21,6 +21,7 @@ function handleJsonContent(content, encoding) {
         var url = wooshCalls[i].url;
 
         url = url.replace(/(``|&|\?)/g, "\n$1");
+        url = url.replace(/(&atts=)/g, "$1\n``");
         elem.innerText = url;
         element.insertAdjacentElement('beforeend', elem);
     }
@@ -35,8 +36,9 @@ function handleWooshContent(request) {
     var elem = document.createElement('p');
     var url = request.url;
 
-    url = decodeURI(url);
+    url = decodeURIComponent(url);
     url = url.replace(/(``|&|\?)/g, "\n$1");
+    url = url.replace(/(&atts=)/g, "$1\n``");
     elem.innerText = url;
     element.insertAdjacentElement('beforeend', elem);
 
@@ -57,7 +59,8 @@ function handleRequestFinished(harEntry) {
     }
 
     var reqElem = document.createElement('p');
-    reqElem.innerText = harEntry.serverIPAddress + ":" + request.method + ":" + request.url // + ":" + request.queryString;
+    reqElem.innerText = harEntry.serverIPAddress + ":" + request.method + ":" + decodeURIComponent(request.url);
+    // + ":" + request.queryString;
     element.insertAdjacentElement('beforeend', reqElem);
     // chrome.devtools.network.getHAR();
 
@@ -81,9 +84,9 @@ function handleRequestFinished(harEntry) {
     var breakElem = document.createElement('hr');
     element.insertAdjacentElement('beforeend', breakElem);
 
-    var reqElem = document.createElement('p');
-    reqElem.innerText = "finished"
-    element.insertAdjacentElement('beforeend', reqElem);
+    // var reqElem = document.createElement('p');
+    // reqElem.innerText = "finished"
+    // element.insertAdjacentElement('beforeend', reqElem);
 }
 
 // https://developer.chrome.com/extensions/devtools_network
