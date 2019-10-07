@@ -7,6 +7,7 @@ console.log("panel.js");
  * @see https://developer.chrome.com/extensions/devtools_network
  **/
 function handleJsonContent(content, encoding) {
+
     var element = document.getElementById("panel.webstats.log");
 
     // var contentElem = document.createElement('p');
@@ -14,16 +15,21 @@ function handleJsonContent(content, encoding) {
     // element.insertAdjacentElement('beforeend', contentElem);
 
     var jsonObj = JSON.parse(content);
-    var wooshCalls = jsonObj.wooshCalls;
-
-    for (var i = 0; i < wooshCalls.length; i++) {
+    if (!jsonObj.wooshCalls) {
         var elem = document.createElement('p');
-        var url = wooshCalls[i].url;
-
-        url = url.replace(/(``|&|\?)/g, "\n$1");
-        url = url.replace(/(&atts=)/g, "$1\n``");
-        elem.innerText = url;
+        elem.innerText = "woosh call not found for this request";
         element.insertAdjacentElement('beforeend', elem);
+    } else {
+        var wooshCalls = jsonObj.wooshCalls;
+        for (var i = 0; i < wooshCalls.length; i++) {
+            var elem = document.createElement('p');
+            var url = wooshCalls[i].url;
+
+            url = url.replace(/(``|&|\?)/g, "\n$1");
+            url = url.replace(/(&atts=)/g, "$1\n``");
+            elem.innerText = url;
+            element.insertAdjacentElement('beforeend', elem);
+        }
     }
 
     var breakElem = document.createElement('hr');
