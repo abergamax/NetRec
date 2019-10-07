@@ -7,49 +7,60 @@ var app = angular.module('loggerApp', [])
         // Angular before v1.2 uses $compileProvider.urlSanitizationWhitelist(...)
     }
 ]);
+
 app.controller('appCtrl', function($scope, $http) {
+
   $scope.logs = [];
   $scope.isRecording = false;
   $scope.tabId = -1;
-
   $scope.recordActionStatus = false;
   $scope.stopRecordActionStatus = false;
   $scope.csvContent = "data:text/csv;charset=utf-8,Method,URL,Type,RequestHeaders,Status,ResponseHeaders,FromCache?" + encodeURIComponent("\n");
 
   $scope.record = function() {
-    if($scope.isRecording) {
+
+    if ($scope.isRecording) {
       return;
     }
 
-    if($scope.tabId === -1) {
+    if ($scope.tabId === -1) {
       console.error('Oops tabId is -1!');
       return;
     }
+
     $scope.recordActionStatus = true;
+
     chrome.runtime.sendMessage({tabId: $scope.tabId, message: "register"}, function(response) {
+
       $scope.$apply(function(){
         $scope.isRecording = true;
         $scope.recordActionStatus = false;
       });
-    });
-  };
+
+    }); //-- chrome.runtime.sendMessage()
+
+  }; //-- $scope.record = function()
 
   $scope.stopRecording = function() {
-    if(!$scope.isRecording) {
+
+    if (!$scope.isRecording) {
       console.error("Skipping command...");
       return;
     }
 
     $scope.stopRecordActionStatus = true;
+
     chrome.runtime.sendMessage({tabId: $scope.tabId, message: "unregister"}, function(response) {
       $scope.$apply(function(){
         $scope.isRecording = false;
         $scope.stopRecordActionStatus = false;
       });
     });
+
   };
 
   $scope.fetchRecordingStatus = function() {
+
     chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
       // Cache tabId, not likely to change
       $scope.tabId = tabs[0].id;
@@ -60,6 +71,7 @@ app.controller('appCtrl', function($scope, $http) {
         });
       });
     });
+
   };
 
   $scope.findName = function(url) {
@@ -67,31 +79,33 @@ app.controller('appCtrl', function($scope, $http) {
     return url.substring(lI, url.length);
   };
 
-
-
   $scope.fetchLogs = function() {
-    if(!$scope.isRecording) {
+
+    if (!$scope.isRecording) {
       return;
     }
 
     chrome.runtime.sendMessage({tabId: $scope.tabId, message: "fetchLogs"}, function(response) {
+
       $scope.$apply(function(){
           $scope.logs = response.data;
-
           generateDataRecord();
       });
+
     });
+
   };
 
   chrome.runtime.onConnect.addListener(function(port) {
-  port.onMessage.addListener(function(msg) {
-        $scope.$apply(function(){
-            $scope.logs.push(msg);
 
-            generateDataRecord();
-        });
+    port.onMessage.addListener(function(msg) {
+          $scope.$apply(function(){
+              $scope.logs.push(msg);
+              generateDataRecord();
+          });
+    });
+
   });
-});
 
 function generateDataRecord(){
   $scope.logs.forEach(function(dataItem, index){
@@ -101,7 +115,7 @@ function generateDataRecord(){
 }
 
 function convertHeadersToString(headers) {
-  if(headers === undefined || headers === null) {
+  if (headers === undefined || headers === null) {
     return '';
   }
 
@@ -113,10 +127,10 @@ function convertHeadersToString(headers) {
 }
 
 function escapeCSV(str){
-  if(str === null ) return str;
+  if (str === null ) return str;
   var result = "";
   var i = 0;
-  for(i = 0; i < str.length ; i++) {
+  for (i = 0; i < str.length ; i++) {
     if (str.charAt(i) === "\"") {
       result += "\"\"";
     } else {

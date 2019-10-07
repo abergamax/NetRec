@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
-    "name": "NetRec",
-    "version": "1.2",
+    "name": "Andrew's NetRec",
+    "version": "1.2.0",
       "permissions": ["webRequest","https://*/*"],
     "background": {
         "scripts": [ "background.js"]
@@ -11,6 +11,6 @@
             "16": "record.png"
           },
       "default_popup": "popup.html"
-    }
-
+    },
+    "devtools_page": "ws-devtools.html"
 }
