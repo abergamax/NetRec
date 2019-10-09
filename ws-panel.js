@@ -47,42 +47,44 @@ function base64Decode (value, utf8Decode) {
 } // -- base64Decode
 
 var ENCODING_BASE64 = "base64";
-var EMPTY_STR = "";
-var EQUAL_SIGN = "=";
-var DOMAIN = ";domain=";
-var EXPIRES = ";expires=";
-var PATH = ";path=/";
-var ENCODING_BASE64 = "base64";
 var ENCODING_URL = "url";
 
-/*
- * read cookie value
- */
-function readCookie (name, encoding, isNative) {
+function addElement(value, type, element) {
+    console.log("addElement", value, type, element);
+    var elem = document.createElement(type);
+    if (value) elem.innerText = value;
+    element.insertAdjacentElement('beforeend', elem);
+}
 
-    var ckName = name + "=";
-    var ArrayOfCookies = document.cookie.split(';');
-    // alert('readCookie started ... ' + ArrayOfCookies.length);
-    var value;
+function handleCookies (request, container) {
+    try {
 
-    for (var i = 0; i < ArrayOfCookies.length; i++) {
-        var ck = ArrayOfCookies[i];
-        // alert(ArrayOfCookies[i]);
-        while (ck.charAt(0) === ' ') ck = ck.substring(1, ck.length);
-        if (ck.indexOf(ckName) === 0) {
-            value = ck.substring(ckName.length, ck.length);
-            // if needed, decode cookie value based on given encoding type
-            if (encoding && encoding === ENCODING_BASE64) {
-                value = utils.base64Decode(value);
-            } else if (encoding && encoding === ENCODING_URL) {
-                value = decodeURIComponent(value);
+        console.log("handleWooshContent", "request.cookies", request.cookies);
+        addElement("cookies", "p", container);
+
+        for (var key in request.cookies) {
+
+            if (request.cookies[key].name === 'stats') {
+                var value = "stats: " + request.cookies[key].value;
+                console.log("handleWooshContent", "stats", value);
+                addElement(value, 'p', container);
             }
-            // if needed, sanitize cookie value
-            // return isNative ? value : utils.sanitized(value) ;
-            return value;
+
+            if (request.cookies[key].name === 'year') {
+                var value = "year: " + base64Decode(request.cookies[key].value);
+                console.log("handleWooshContent", "year", value);
+                addElement(value, 'p', container);
+            }
+
+            if (request.cookies[key].name === 'hour') {
+                var value = "hour: " + base64Decode(request.cookies[key].value);
+                console.log("handleWooshContent", "hour", value);
+                addElement(value, 'p', container);
+            }
         }
+    } catch (e) {
+        console.error(e);
     }
-    return null;
 }
 
 /**
@@ -109,7 +111,6 @@ function handleJsonContent(content, encoding) {
         for (var i = 0; i < wooshCalls.length; i++) {
             var elem = document.createElement('p');
             var url = wooshCalls[i].url;
-
             url = url.replace(/(``|&|\?)/g, "\n$1");
             url = url.replace(/(&atts=)/g, "$1\n``");
             elem.innerText = url;
@@ -134,7 +135,7 @@ function handleWooshContent(request) {
     element.insertAdjacentElement('beforeend', elem);
 
     var breakElem = document.createElement('hr');
-    element.insertAdjacentElement('beforeend', breakElem);    
+    element.insertAdjacentElement('beforeend', breakElem);
 }
 
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/devtools.network/onRequestFinished
@@ -172,18 +173,10 @@ function handleRequestFinished(harEntry) {
         handleWooshContent(request);
     }
 
-    // alert("window.location.href: " + window.location.href);
-    // var elem = document.createElement('p');
-    // elem.innerText = readCookie('stats', null, true);
-    // alert('stats cookie: ' + readCookie('stats', null, true));
-    // element.insertAdjacentElement('beforeend', elem);
+    handleCookies(request, element);
 
     var breakElem = document.createElement('hr');
     element.insertAdjacentElement('beforeend', breakElem);
-
-    // var reqElem = document.createElement('p');
-    // reqElem.innerText = "finished"
-    // element.insertAdjacentElement('beforeend', reqElem);
 }
 
 // https://developer.chrome.com/extensions/devtools_network
