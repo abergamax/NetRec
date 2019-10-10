@@ -78,18 +78,22 @@ function parseWooshUrl(url) {
 
         if (p[0] === 'atts') {
 
+            let ptr = ptable.insertRow();
+            let ptd0 = ptr.insertCell();
+            let ptd1 = ptr.insertCell();
+            ptd0.innerText = "&" + p[0];
+            ptd1.innerText = "";
+
             var attributes = p[1].split("``");
             attributes.sort();
 
             // console.log(CLASS_NAME, "parseWooshUrl", "atts ... attributes", attributes);
             attributes.forEach(function(attribute) {
-
-                let ptr = ptable.insertRow();
-                let ptd0 = ptr.insertCell();
-                let ptd1 = ptr.insertCell();
-
                 var a = attribute.split(">>");
                 if (a[0] && a[1]) {
+                    let ptr = ptable.insertRow();
+                    let ptd0 = ptr.insertCell();
+                    let ptd1 = ptr.insertCell();
                     atts[a[0]] = a[1];
                     ptd0.innerText = "``" + a[0];
                     ptd1.innerText = a[1];
