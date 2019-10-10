@@ -142,21 +142,22 @@ function handleCookies (request) {
         for (var key in request.cookies) {
 
             if (request.cookies[key].name === 'stats') {
-                var value = "stats: " + request.cookies[key].value;
+                var value = request.cookies[key].value;
+                value = value.replace(/(,)/g, "\n$1");
                 console.log(CLASS_NAME, "handleCookies", "stats", value);
-                appendChild('p', value);
+                appendChild('p', "stats: \n" + value);
             }
 
             if (request.cookies[key].name === 'year') {
-                var value = "year: " + base64Decode(request.cookies[key].value);
+                var value = base64Decode(request.cookies[key].value);
                 console.log(CLASS_NAME, "handleCookies", "year", value);
-                appendChild('p', value);
+                appendChild('p', "year: \n" + value);
             }
 
             if (request.cookies[key].name === 'hour') {
-                var value = "hour: " + base64Decode(request.cookies[key].value);
+                var value =base64Decode(request.cookies[key].value);
                 console.log(CLASS_NAME, "handleCookies", "hour", value);
-                appendChild('p', value);
+                appendChild('p',  "hour: \n" + value);
             }
         }
     } catch (e) {
