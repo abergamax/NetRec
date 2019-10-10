@@ -1,7 +1,7 @@
 {
     "manifest_version": 2,
-    "name": "Andrew's NetRec",
-    "version": "1.2.0",
+    "name": "Webstats",
+    "version": "1.2.1",
       "permissions": ["webRequest","https://*/*"],
     "background": {
         "scripts": [ "background.js"]

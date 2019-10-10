@@ -49,37 +49,38 @@ function base64Decode (value, utf8Decode) {
 var ENCODING_BASE64 = "base64";
 var ENCODING_URL = "url";
 
-function addElement(value, type, element) {
-    console.log("addElement", value, type, element);
+function addElement(container, type, value) {
+    console.log("addElement", value, type);
     var elem = document.createElement(type);
     if (value) elem.innerText = value;
-    element.insertAdjacentElement('beforeend', elem);
+    container.insertAdjacentElement('beforeend', elem);
 }
 
 function handleCookies (request, container) {
+
     try {
 
-        console.log("handleWooshContent", "request.cookies", request.cookies);
-        addElement("cookies", "p", container);
+        console.log("handleCookies", "request", request, "request.cookies", request.cookies);
+        addElement(container, "p", "cookies");
 
         for (var key in request.cookies) {
 
             if (request.cookies[key].name === 'stats') {
                 var value = "stats: " + request.cookies[key].value;
-                console.log("handleWooshContent", "stats", value);
-                addElement(value, 'p', container);
+                console.log("handleCookies", "stats", value);
+                addElement(container, 'p', value);
             }
 
             if (request.cookies[key].name === 'year') {
                 var value = "year: " + base64Decode(request.cookies[key].value);
-                console.log("handleWooshContent", "year", value);
-                addElement(value, 'p', container);
+                console.log("handleCookies", "year", value);
+                addElement(container, 'p', value);
             }
 
             if (request.cookies[key].name === 'hour') {
                 var value = "hour: " + base64Decode(request.cookies[key].value);
-                console.log("handleWooshContent", "hour", value);
-                addElement(value, 'p', container);
+                console.log("handleCookies", "hour", value);
+                addElement(container, 'p', value);
             }
         }
     } catch (e) {
@@ -95,77 +96,64 @@ function handleCookies (request, container) {
  **/
 function handleJsonContent(content, encoding) {
 
-    var element = document.getElementById("panel.webstats.log");
-
-    // var contentElem = document.createElement('p');
-    // contentElem.innerText = "content: " + content + "  encoding:" + encoding;
-    // element.insertAdjacentElement('beforeend', contentElem);
+    var container = document.getElementById("panel.webstats.log");
 
     var jsonObj = JSON.parse(content);
-    if (!jsonObj.wooshCalls) {
-        var elem = document.createElement('p');
-        elem.innerText = "woosh call not found for this request";
-        element.insertAdjacentElement('beforeend', elem);
+
+    if (jsonObj == null || !jsonObj.wooshCalls) {
+        addElement(container, "p",  "woosh call not found for this request");
     } else {
         var wooshCalls = jsonObj.wooshCalls;
         for (var i = 0; i < wooshCalls.length; i++) {
-            var elem = document.createElement('p');
             var url = wooshCalls[i].url;
             url = url.replace(/(``|&|\?)/g, "\n$1");
             url = url.replace(/(&atts=)/g, "$1\n``");
-            elem.innerText = url;
-            element.insertAdjacentElement('beforeend', elem);
+            addElement(container, "p",  url);
         }
     }
 
-    var breakElem = document.createElement('hr');
-    element.insertAdjacentElement('beforeend', breakElem);    
+    addElement(container, "hr");
 }
 
 function handleWooshContent(request) {
 
-    var element = document.getElementById("panel.webstats.log");
-    var elem = document.createElement('p');
+    var container = document.getElementById("panel.webstats.log");
     var url = request.url;
 
     url = decodeURIComponent(url);
     url = url.replace(/(``|&|\?)/g, "\n$1");
     url = url.replace(/(&atts=)/g, "$1\n``");
-    elem.innerText = url;
-    element.insertAdjacentElement('beforeend', elem);
+    addElement(container, "p",  url);
 
-    var breakElem = document.createElement('hr');
-    element.insertAdjacentElement('beforeend', breakElem);
+    addElement(container, "hr");
 }
 
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/devtools.network/onRequestFinished
 // http://www.softwareishard.com/blog/har-12-spec/#entries
 function handleRequestFinished(harEntry) {
 
-    var element = document.getElementById("panel.webstats.log");
-
     var request = harEntry.request;
+    var response = harEntry.response; 
 
+    // skip calls which are not for webstats
     if (request.url.toLowerCase().indexOf("/woosh/") === -1) {
         return;
     }
 
-    var reqElem = document.createElement('p');
-    reqElem.innerText = harEntry.serverIPAddress + ":" + request.method + ":" + decodeURIComponent(request.url);
-    // + ":" + request.queryString;
-    element.insertAdjacentElement('beforeend', reqElem);
-    // chrome.devtools.network.getHAR();
+    var container = document.getElementById("panel.webstats.log");
 
-    var response = harEntry.response;
-    var respElem = document.createElement('p');
-    respElem.innerText = 
-             " status: " + response.status 
+    // display request
+    var innerText = harEntry.serverIPAddress + ":" + request.method + ":" + decodeURIComponent(request.url);
+    addElement(container, 'p', innerText);
+
+    // display response
+    innerText = " status: " + response.status 
         // + " size :" + response.content.size
         // + " compression:" + response.content.compression
            + " mimeType:" + response.content.mimeType;
         // + ":" + response.content.text
         // + ":" + response.content.encoding;
-    element.insertAdjacentElement('beforeend', respElem);    
+    addElement(container, 'p', innerText);
 
     if (request.url.toLowerCase().indexOf("/webstats/") !== -1) {
         harEntry.getContent(handleJsonContent);
@@ -173,10 +161,9 @@ function handleRequestFinished(harEntry) {
         handleWooshContent(request);
     }
 
-    handleCookies(request, element);
+    handleCookies(request, container);
 
-    var breakElem = document.createElement('hr');
-    element.insertAdjacentElement('beforeend', breakElem);
+    addElement(container, 'hr');
 }
 
 // https://developer.chrome.com/extensions/devtools_network
