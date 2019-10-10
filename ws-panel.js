@@ -1,7 +1,8 @@
 // chrome://extensions/
-// console.log("panel.js");
 
+var CLASS_NAME = "ws-panel.js";
 var BASE64CODE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+console.log(CLASS_NAME, "version", "1.2.1");
 
 /**
  * Base64 Decoding for browser who do not suport window atob || btoa
@@ -42,45 +43,116 @@ function base64Decode (value, utf8Decode) {
         plain = d.join('');
         return utf8Decode ? Utf8.decode(plain) : plain;
     } catch (e) {
-        console.error("base64Decode", "exception", e);
+        console.error(CLASS_NAME, "base64Decode", "exception", e);
     }
 } // -- base64Decode
 
 var ENCODING_BASE64 = "base64";
 var ENCODING_URL = "url";
 
-function addElement(container, type, value) {
-    console.log("addElement", value, type);
-    var elem = document.createElement(type);
-    if (value) elem.innerText = value;
-    container.insertAdjacentElement('beforeend', elem);
+function parseWooshUrl(url) {
+    console.log(CLASS_NAME, "parseWooshUrl", "url", url);
+
+    var params = {};
+    var atts = {};
+
+    url = decodeURIComponent(url);
+
+    // replace "?" with "&" to split url string on one character (&)
+    url = url.replace("?", "&");
+    url = url.replace(/=>/g, ">>");
+
+    parameters = url.split("&");
+    console.log(CLASS_NAME, "parseWooshUrl", "parameters", parameters);
+
+    // remove http://stats.lawyers.com/woosh/ from parameters
+    var baseUrl = parameters.shift();
+    appendChild('p', baseUrl);
+
+    var ptable = document.createElement('table');
+
+    // parameters.sort();
+    parameters.forEach(function(param) {
+
+        var p = param.split("=");
+
+        if (p[0] === 'atts') {
+
+            var attributes = p[1].split("``");
+            attributes.sort();
+
+            // console.log(CLASS_NAME, "parseWooshUrl", "atts ... attributes", attributes);
+            attributes.forEach(function(attribute) {
+
+                let ptr = ptable.insertRow();
+                let ptd0 = ptr.insertCell();
+                let ptd1 = ptr.insertCell();
+
+                var a = attribute.split(">>");
+                if (a[0] && a[1]) {
+                    atts[a[0]] = a[1];
+                    ptd0.innerText = "``" + a[0];
+                    ptd1.innerText = a[1];
+                }
+            });
+
+            params[p[0]] = atts;
+
+        } else {
+
+            params[p[0]] = p[1];
+            let ptr = ptable.insertRow();
+            let ptd0 = ptr.insertCell();
+            ptd0.innerText = "&" + p[0];
+            let ptd1 = ptr.insertCell();
+            ptd1.innerText = p[1];
+        }
+    });
+
+    console.log(CLASS_NAME, "parseWooshUrl", "params", params);
+    console.log(CLASS_NAME, "parseWooshUrl", "ptable", ptable);
+
+    document.getElementById("panel.webstats.log").appendChild(ptable);
+
+    appendChild("hr");
 }
 
-function handleCookies (request, container) {
+function appendChild(type, value) {
+
+    console.log(CLASS_NAME, "appendChild", type, value);
+    var container = document.getElementById("panel.webstats.log");
+    var elem = document.createElement(type);
+
+    if (value) elem.innerText = value;
+
+    container.appendChild(elem);
+}
+
+function handleCookies (request) {
 
     try {
 
-        console.log("handleCookies", "request", request, "request.cookies", request.cookies);
-        addElement(container, "p", "cookies");
+        console.log(CLASS_NAME, "handleCookies", "request", request, "request.cookies", request.cookies);
+        appendChild("p", "cookies");
 
         for (var key in request.cookies) {
 
             if (request.cookies[key].name === 'stats') {
                 var value = "stats: " + request.cookies[key].value;
-                console.log("handleCookies", "stats", value);
-                addElement(container, 'p', value);
+                console.log(CLASS_NAME, "handleCookies", "stats", value);
+                appendChild('p', value);
             }
 
             if (request.cookies[key].name === 'year') {
                 var value = "year: " + base64Decode(request.cookies[key].value);
-                console.log("handleCookies", "year", value);
-                addElement(container, 'p', value);
+                console.log(CLASS_NAME, "handleCookies", "year", value);
+                appendChild('p', value);
             }
 
             if (request.cookies[key].name === 'hour') {
                 var value = "hour: " + base64Decode(request.cookies[key].value);
-                console.log("handleCookies", "hour", value);
-                addElement(container, 'p', value);
+                console.log(CLASS_NAME, "handleCookies", "hour", value);
+                appendChild('p', value);
             }
         }
     } catch (e) {
@@ -96,36 +168,39 @@ function handleCookies (request, container) {
  **/
 function handleJsonContent(content, encoding) {
 
-    var container = document.getElementById("panel.webstats.log");
+    console.log(CLASS_NAME, "handleJsonContent", content, encoding);
 
     var jsonObj = JSON.parse(content);
 
     if (jsonObj == null || !jsonObj.wooshCalls) {
-        addElement(container, "p",  "woosh call not found for this request");
+        appendChild("p",  "woosh call not found for this request");
     } else {
         var wooshCalls = jsonObj.wooshCalls;
         for (var i = 0; i < wooshCalls.length; i++) {
             var url = wooshCalls[i].url;
             url = url.replace(/(``|&|\?)/g, "\n$1");
             url = url.replace(/(&atts=)/g, "$1\n``");
-            addElement(container, "p",  url);
+            appendChild("p",  url);
+            parseWooshUrl(url);
         }
     }
 
-    addElement(container, "hr");
+    appendChild("hr");
 }
 
 function handleWooshContent(request) {
 
-    var container = document.getElementById("panel.webstats.log");
-    var url = request.url;
+    console.log(CLASS_NAME, "handleWooshContent", request);
 
+    var url = request.url;
     url = decodeURIComponent(url);
     url = url.replace(/(``|&|\?)/g, "\n$1");
     url = url.replace(/(&atts=)/g, "$1\n``");
-    addElement(container, "p",  url);
 
-    addElement(container, "hr");
+    appendChild("p",  url);
+    appendChild("hr");
+
+    parseWooshUrl(url);
 }
 
 // https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/API/devtools.network/onRequestFinished
@@ -133,27 +208,27 @@ function handleWooshContent(request) {
 function handleRequestFinished(harEntry) {
 
     var request = harEntry.request;
-    var response = harEntry.response; 
 
     // skip calls which are not for webstats
     if (request.url.toLowerCase().indexOf("/woosh/") === -1) {
         return;
+    } else {
+        console.log(CLASS_NAME, "handleRequestFinished", harEntry);
     }
-
-    var container = document.getElementById("panel.webstats.log");
 
     // display request
     var innerText = harEntry.serverIPAddress + ":" + request.method + ":" + decodeURIComponent(request.url);
-    addElement(container, 'p', innerText);
+    appendChild('p', innerText);
 
     // display response
-    innerText = " status: " + response.status 
+    var response = harEntry.response;
+    innerText = " status: " + response.status
         // + " size :" + response.content.size
         // + " compression:" + response.content.compression
            + " mimeType:" + response.content.mimeType;
         // + ":" + response.content.text
         // + ":" + response.content.encoding;
-    addElement(container, 'p', innerText);
+    appendChild('p', innerText);
 
     if (request.url.toLowerCase().indexOf("/webstats/") !== -1) {
         harEntry.getContent(handleJsonContent);
@@ -161,9 +236,9 @@ function handleRequestFinished(harEntry) {
         handleWooshContent(request);
     }
 
-    handleCookies(request, container);
+    handleCookies(request);
 
-    addElement(container, 'hr');
+    appendChild('hr');
 }
 
 // https://developer.chrome.com/extensions/devtools_network
