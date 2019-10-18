@@ -85,6 +85,7 @@ function () {
         elem.innerText = value;
         console.debug(CLASS_NAME, METHOD_NAME, "elem", elem);
         container.appendChild(elem);
+        logHr();
     }
 
     /**
@@ -200,7 +201,7 @@ function () {
             // update instance
             hourCookie = parsedValue;
             // log cookie
-            logString("b", obj.name);
+            logString("b", obj.name + " cookie");
             logString("p", parsedValue);
             logHr();
             console.log(CLASS_NAME, METHOD_NAME, "updated cookie", obj.name, parsedValue);
@@ -228,7 +229,7 @@ function () {
             // update instance
             yearCookie = parsedValue;
             // log cookie
-            logString("b", obj.name);
+            logString("b", obj.name + " cookie");
             logString("p", parsedValue);
             logHr();
             console.log(CLASS_NAME, METHOD_NAME, "updated cookie", obj.name, parsedValue);
@@ -254,17 +255,30 @@ function () {
 
             statsCookie = statsModel;
 
-            logString("b", obj.name, obj.value);
+            logString("b", obj.name + " cookie");
 
             // log each property in Chrome cookie object
-            // Object.getOwnPropertyNames(obj).forEach(function(param) {
-            //     logString('p',  param + ": " + obj[param]);
+            // Object.getOwnPropertyNames(obj).forEach(function(paramName) {
+            //     logString('p',  paramName + ": " + obj[paramName]);
             // });
 
             // log each property in stateCookie object
-            Object.getOwnPropertyNames(statsModel).forEach(function(param) {
-                logString('p',  param + ": " + statsModel[param]);
+            // Object.getOwnPropertyNames(statsModel).forEach(function(paramName) {
+            //     logString('p',  paramName + ": " + statsModel[paramName]);
+            // });
+
+            var table = document.createElement('table');
+
+            Object.getOwnPropertyNames(statsModel).forEach(function(paramName) {
+                var tr = table.insertRow();
+                var td0 = tr.insertCell();
+                var td1 = tr.insertCell();
+                td0.innerText = paramName;
+                td1.innerText = statsModel[paramName];
             });
+
+            var container = document.getElementById("panel.webstats.log");
+            container.appendChild(table);
 
             logHr();
         }
@@ -379,11 +393,16 @@ function () {
             url = url.replace("?", "&");
             url = url.replace(/=>/g, ">>");
 
+            // temporarily swap valid ampersands
+            var AMPERSAND = "||";
+            url = url.replace(" & ", AMPERSAND);
+
             parameters = url.split("&");
             console.log(CLASS_NAME, METHOD_NAME, "parameters", parameters);
 
             // remove http://stats.lawyers.com/woosh/ from parameters
             var baseUrl = parameters.shift();
+            logString('p', baseUrl);
 
             var ptable = document.createElement('table');
 
@@ -395,6 +414,7 @@ function () {
 
                 if (p[0] === 'atts') {
 
+                    // the following code handles attributes delimited with ``
                     var ptr = ptable.insertRow();
                     var ptd0 = ptr.insertCell();
                     var ptd1 = ptr.insertCell();
@@ -410,6 +430,7 @@ function () {
                             var ptr = ptable.insertRow();
                             var ptd0 = ptr.insertCell();
                             var ptd1 = ptr.insertCell();
+                            a[1] = a[1].replace(AMPERSAND, " & ");
                             atts[a[0]] = a[1];
                             ptd0.innerText = "``" + a[0];
                             ptd1.innerText = a[1];
@@ -419,12 +440,13 @@ function () {
                     params[p[0]] = atts;
 
                 } else {
-
+                    // the following code handles request parameters delimited with &
                     params[p[0]] = p[1];
                     var ptr = ptable.insertRow();
                     var ptd0 = ptr.insertCell();
                     ptd0.innerText = "&" + p[0];
                     var ptd1 = ptr.insertCell();
+                    p[1] = p[1].replace(AMPERSAND, " & ");
                     ptd1.innerText = p[1];
                 }
             });
@@ -574,6 +596,8 @@ function () {
         // logString("p", "parseCookies");
 
         // handles amp and legacy use cases by mapping obj.cookie to obj
+        if (!obj) logError("parseCookies() ... invalid cookie object");
+
         if (obj.cookie) obj = obj.cookie;
 
         var parsedValue;
@@ -623,7 +647,12 @@ function () {
 
         if (!content) {
             console.warn(CLASS_NAME, METHOD_NAME, "invalid content", content);
-            logError("no response from woosh call. If in prod, check statsdebug cookie");
+            logError(
+                "No response from woosh call. \n" +
+                "Check for interrupted requests from amp-analytics. \n" +
+                "On prod ... check statsdebug cookie exists. \n" +
+                "On staging or local ... allow webstats requests to use self-signed certificates. \n"
+            );
             return;
         }
 
@@ -742,5 +771,11 @@ function () {
      * see https://developer.chrome.com/extensions/cookies
      */
     chrome.cookies.onChanged.addListener(parseCookies);
+
+    // function addMarker () {
+    //     alert("addMarker called");
+    // }
+
+    // document.getElementById("addMarker1").addEventListener("click", addMarker);
 
 })(); //-- Martindale.WebStats.DevTools
